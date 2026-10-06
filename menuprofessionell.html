@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Speisekarte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12343b;--card:#1a4249;--ink:#f3f7f6;--soft:#b9cfcc;--gold:#f2c14e;--on-gold:#12343b;--line:rgba(255,255,255,.14)}
+:root[data-theme=schwarz]{--bg:#0d0d0d;--card:#191919;--ink:#f4efe6;--soft:#a7a299;--gold:#d4af6a;--on-gold:#0d0d0d;--line:rgba(255,255,255,.12)}
+:root[data-theme=hell]{--bg:#f6f4ef;--card:#ffffff;--ink:#1d2b2e;--soft:#5d6d70;--gold:#1d5c63;--on-gold:#ffffff;--line:rgba(0,0,0,.12)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:17px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif;display:flex;justify-content:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#app{width:100%;max-width:480px;padding:28px 22px 48px;min-height:100vh}
+h1,h2{font-family:"DM Serif Display",Georgia,serif;font-weight:400;margin:0}
+h1{font-size:38px;line-height:1.15;margin-bottom:8px}
+h2{font-size:28px;margin:6px 0 14px}
+.photo{border-radius:20px;overflow:hidden;aspect-ratio:4/3;margin-bottom:26px;background:var(--card);box-shadow:0 14px 34px rgba(0,0,0,.25)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.sub{color:var(--soft);margin:0 0 28px}
+.btn{display:block;width:100%;text-align:center;background:var(--gold);color:var(--on-gold);font:700 18px/1.2 inherit;font-family:inherit;padding:18px 20px;border-radius:14px;border:2px solid var(--gold);text-decoration:none;margin-bottom:12px;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink);border-color:var(--line)}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{background:none;border:0;color:var(--ink);font:600 17px inherit;font-family:inherit;padding:8px 0;cursor:pointer}
+.top b{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:22px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 16px;position:sticky;top:0;background:var(--bg);margin:0 -22px;padding-left:22px;padding-right:22px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:transparent;color:var(--ink);font:600 15px inherit;font-family:inherit;padding:10px 16px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
+.item{display:flex;gap:14px;background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 0 var(--line)}.txt{flex:1;min-width:0}.item img{width:88px;height:88px;object-fit:cover;border-radius:12px;flex:none}.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--gold);color:var(--on-gold);margin:8px 6px 0 0}.links{display:flex;gap:10px;margin:6px 0 18px}.links a{flex:1;text-align:center;padding:12px 8px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;font-weight:600;font-size:15px}.open{color:var(--soft);font-size:15px;margin:18px 0 0}
+.row{display:flex;justify-content:space-between;gap:12px;font-weight:700;font-size:18px}
+.price{white-space:nowrap;color:var(--gold)}
+.desc{color:var(--soft);font-size:15px;margin-top:2px}
+.all{color:var(--soft);font-size:13px;margin-top:4px}
+.note{color:var(--soft);font-size:13px;margin:22px 0}
+.msg{color:var(--soft)}
+label{display:block;margin:0 0 6px;font-weight:600}
+.hint{color:var(--soft);font-size:14px;margin:-12px 0 20px}
+input{width:100%;font:inherit;padding:14px;border-radius:10px;border:0;margin-bottom:20px;background:#f3f7f6;color:#12343b}
+#out{word-break:break-all;background:rgba(0,0,0,.25);padding:14px;border-radius:10px;font-size:14px;margin:20px 0 12px;display:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search), app=document.getElementById("app");
+  var name=(q.get("n")||"").trim(), link=(q.get("l")||"").trim(), sid=(q.get("s")||"").trim(),
+      img=(q.get("b")||"").trim(), tel=(q.get("t")||"").trim(), theme=(q.get("d")||"").trim(),
+      ig=(q.get("i")||"").trim(), adr=(q.get("a")||"").trim(), opn=(q.get("o")||"").trim(), col=(q.get("c")||"").trim();
+  if(theme==="hell"||theme==="schwarz")document.documentElement.setAttribute("data-theme",theme);
+  if(/^[0-9a-fA-F]{6}$/.test(col)){var rs=document.documentElement.style;rs.setProperty("--gold","#"+col);
+    var L=(parseInt(col.substr(0,2),16)*299+parseInt(col.substr(2,2),16)*587+parseInt(col.substr(4,2),16)*114)/1000;
+    rs.setProperty("--on-gold",L>150?"#111":"#fff")}
+  function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+  function clear(){app.textContent=""}
+  var okLink=/^https:\/\//i.test(link), okSheet=/^[A-Za-z0-9_-]+$/.test(sid);
+
+  function csv(t){var rows=[],r=[],f="",inq=false,i,c;
+    for(i=0;i<t.length;i++){c=t[i];
+      if(inq){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else inq=false}else f+=c}
+      else if(c==='"')inq=true;
+      else if(c===","){r.push(f);f=""}
+      else if(c==="\n"){r.push(f);rows.push(r);r=[];f=""}
+      else if(c!=="\r")f+=c}
+    if(f||r.length){r.push(f);rows.push(r)}
+    return rows}
+  function price(p){p=(p||"").trim();
+    if(/^[\d.,]+$/.test(p)){var n=parseFloat(p.replace(",","."));if(!isNaN(n))return n.toFixed(2).replace(".",",")+" €"}
+    return p}
+
+  function home(){
+    clear();document.title=name;
+    if(/^[A-Za-z0-9._-]+$/.test(img)){
+      var ph=el("div","photo"),im=document.createElement("img");
+      im.src=img;im.alt="Foto von "+name;im.onerror=function(){ph.remove()};
+      ph.appendChild(im);app.appendChild(ph)}
+    app.appendChild(el("h1","",name));
+    app.appendChild(el("p","sub","Herzlich willkommen! Schön, dass Sie da sind."));
+    if(okSheet){var m=el("button","btn","Speisekarte");m.onclick=menu;app.appendChild(m)}
+    var r=el("a","btn"+(okSheet?" alt":""),"Bewertung abgeben");r.href=link;r.rel="noopener";app.appendChild(r);
+    var ln=el("div","links");
+    if(/^[+0-9 ()\/-]{5,}$/.test(tel)){var c=el("a","","Anrufen");c.href="tel:"+tel.replace(/[^+0-9]/g,"");ln.appendChild(c)}
+    if(adr){var mp=el("a","","Route");mp.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(adr);mp.rel="noopener";ln.appendChild(mp)}
+    if(/^[A-Za-z0-9._]+$/.test(ig)){var ga=el("a","","Instagram");ga.href="https://instagram.com/"+ig;ga.rel="noopener";ln.appendChild(ga)}
+    if(ln.children.length)app.appendChild(ln);
+    if(opn)app.appendChild(el("p","open",opn));
+  }
+
+  function menu(){
+    clear();
+    var top=el("div","top"),bk=el("button","back","‹ Zurück");bk.onclick=home;
+    top.appendChild(bk);top.appendChild(el("b","",name));app.appendChild(top);
+    var box=el("div","msg","Speisekarte wird geladen …");app.appendChild(box);
+    var u="https://docs.google.com/spreadsheets/d/e/"+sid+"/pub?output=csv&t="+Math.floor(Date.now()/60000);
+    fetch(u).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){
+      var rows=csv(t).slice(1),cats=[],map={};
+      rows.forEach(function(r){
+        var k=(r[0]||"").trim(),g=(r[1]||"").trim();
+        if(!k||!g||/^(nein|n|0)$/i.test((r[5]||"").trim()))return;
+        if(!map[k]){map[k]=[];cats.push(k)}
+        map[k].push({g:g,d:(r[2]||"").trim(),p:price(r[3]),a:(r[4]||"").trim(),b:(r[6]||"").trim(),t:(r[7]||"").trim()});
+      });
+      if(!cats.length)throw 0;
+      box.remove();
+      var chips=el("div","chips"),list=el("div"),cur=0;
+      app.appendChild(chips);app.appendChild(list);
+      var note=el("p","note","Alle Preise inkl. MwSt. Allergene und Zusatzstoffe auf Nachfrage.");
+      app.appendChild(note);
+      if(okLink){var rv=el("a","btn","Hat es geschmeckt? Bewertung abgeben");rv.href=link;rv.rel="noopener";app.appendChild(rv)}
+      function show(i){
+        cur=i;list.textContent="";
+        Array.prototype.forEach.call(chips.children,function(c,j){c.setAttribute("aria-pressed",j===i)});
+        list.appendChild(el("h2","",cats[i]));
+        map[cats[i]].forEach(function(x){
+          var it=el("div","item"),tx=el("div","txt"),row=el("div","row");
+          row.appendChild(el("span","",x.g));row.appendChild(el("span","price",x.p));tx.appendChild(row);
+          if(x.d)tx.appendChild(el("div","desc",x.d));
+          if(x.a)tx.appendChild(el("div","all","Allergene: "+x.a));
+          if(x.t)x.t.split(",").forEach(function(g){g=g.trim();if(g)tx.appendChild(el("span","tag",g))});
+          it.appendChild(tx);
+          if(/^[A-Za-z0-9._-]+$/.test(x.b)){var im=document.createElement("img");im.src=x.b;im.alt=x.g;im.loading="lazy";im.onerror=function(){im.remove()};it.appendChild(im)}
+          list.appendChild(it)});
+        window.scrollTo({top:0})}
+      cats.forEach(function(k,i){var c=el("button","chip",k);c.onclick=function(){show(i)};chips.appendChild(c)});
+      show(0);
+    }).catch(function(){box.textContent="Die Speisekarte konnte gerade nicht geladen werden. Bitte versuchen Sie es später noch einmal."});
+  }
+
+  function generator(){
+    clear();document.title="Link-Generator";
+    app.appendChild(el("h1","","Link für den QR-Code erstellen"));
+    app.appendChild(el("p","sub","Felder mit * sind Pflicht."));
+    var f={};
+    function field(key,lab,ph,hint){var l=el("label","",lab);l.htmlFor=key;var i=el("input");i.id=key;i.placeholder=ph;i.autocapitalize="none";i.autocorrect="off";
+      app.appendChild(l);app.appendChild(i);if(hint)app.appendChild(el("p","hint",hint));f[key]=i}
+    field("n","Name des Restaurants *","z. B. Trattoria Roma");
+    field("l","Google-Bewertungslink *","https://search.google.com/local/writereview?placeid=…");
+    field("s","Link der veröffentlichten Google-Tabelle *","https://docs.google.com/spreadsheets/d/e/…/pub?output=csv","Tabelle: Datei → Teilen → Im Web veröffentlichen → CSV.");
+    field("b","Bilddatei (optional)","z. B. trattoria-roma.jpg","Foto vorher im Repository hochladen, Dateiname klein ohne Leerzeichen.");
+    field("t","Telefonnummer (optional)","z. B. +49 7131 123456");
+    field("a","Adresse (optional)","z. B. Hauptstraße 1, 74072 Heilbronn");
+    field("i","Instagram-Name (optional)","z. B. trattoria_roma");
+    field("o","Öffnungszeiten (optional)","z. B. Mo–So 11–22 Uhr");
+    field("c","Markenfarbe (optional)","z. B. e63946","Hex-Code ohne #. Leer = Standardfarbe.");
+    field("d","Design (optional)","dunkel, hell oder schwarz","Leer = dunkel.");
+    var go=el("button","btn","Link erstellen"),out=el("div");out.id="out";
+    var cp=el("button","btn alt","Link kopieren");cp.style.display="none";
+    app.appendChild(go);app.appendChild(out);app.appendChild(cp);
+    var url="";
+    function err(m){out.style.display="block";out.textContent=m;cp.style.display="none"}
+    go.onclick=function(){
+      var n=f.n.value.trim(),l=f.l.value.trim(),s=f.s.value.trim(),b=f.b.value.trim(),t=f.t.value.trim(),d=f.d.value.trim().toLowerCase(),a=f.a.value.trim(),i=f.i.value.trim().replace(/^.*instagram\.com\//,"").replace(/[@\/?].*$/,""),o=f.o.value.trim(),c=f.c.value.trim().replace("#","");
+      var m=s.match(/\/d\/e\/([A-Za-z0-9_-]+)/);if(m)s=m[1];
+      if(!n||!/^https:\/\//i.test(l))return err("Bitte Namen und einen Google-Link eintragen, der mit https:// beginnt.");
+      if(!/^[A-Za-z0-9_-]+$/.test(s))return err("Der Tabellen-Link ist ungültig. Bitte den Link aus „Im Web veröffentlichen“ (CSV) einfügen.");
+      if(b&&!/^[A-Za-z0-9._-]+$/.test(b))return err("Bildname: nur Buchstaben ohne Umlaute, Zahlen, Punkt, Bindestrich, keine Leerzeichen.");
+      url=location.origin+location.pathname+"?n="+encodeURIComponent(n)+"&l="+encodeURIComponent(l)+"&s="+encodeURIComponent(s)
+        +(b?"&b="+encodeURIComponent(b):"")+(t?"&t="+encodeURIComponent(t):"")+(d==="hell"||d==="schwarz"?"&d="+d:"")+(a?"&a="+encodeURIComponent(a):"")+(i?"&i="+encodeURIComponent(i):"")+(o?"&o="+encodeURIComponent(o):"")+(/^[0-9a-fA-F]{6}$/.test(c)?"&c="+c:"");
+      out.style.display="block";out.textContent=url;cp.style.display="block";cp.textContent="Link kopieren"};
+    cp.onclick=function(){
+      if(navigator.clipboard)navigator.clipboard.writeText(url).then(function(){cp.textContent="Kopiert ✓"});
+      else{var r=document.createRange();r.selectNodeContents(out);var s=getSelection();s.removeAllRanges();s.addRange(r);cp.textContent="Markiert – jetzt kopieren"}}
+  }
+
+  if(name&&okLink)home();else generator();
+})();
+</script>
+</body>
+</html>
